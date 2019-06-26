@@ -13,6 +13,8 @@ public class Person {
 	boolean attendingGala;
 	boolean hasDietRestrictions;
 	String dietRestrictions;
+	Person spouse;
+	boolean hasPotentialCity;
 
 	public Person(String fnm, String lnm, ArrayList<String> tglist, ArrayList<String> rst) {
 		firstName = fnm;
@@ -27,26 +29,18 @@ public class Person {
 		if(hasDietRestrictions) {
 			dietRestrictions = fetchDietRestrictions();
 		}
+		spouse = null;
 	}
 
 	private String fetchDietRestrictions() {
 		String rv = "";
-		if(rest.get(2).equals("TRUE")) {
-			rv+="diary,";
-		}
-		if(rest.get(3).equals("TRUE")) {
-			rv+="treenuts,";
-		}
-		if(rest.get(6).equals("TRUE")) {
-			rv+="gluten,";
-		}
-		if(rest.get(7).equals("TRUE")) {
-			rv+="legumes/peanuts,";
-		}
-		if(rest.get(8).equals("TRUE")) {
-			rv+="vegetarian";
-		}
 		
+		if(rest.get(2).equals("TRUE")) { rv+="diary,"; }
+		if(rest.get(3).equals("TRUE")) { rv+="treenuts,"; }
+		if(rest.get(6).equals("TRUE")) { rv+="gluten,"; }
+		if(rest.get(7).equals("TRUE")) { rv+="legumes/peanuts,"; }
+		if(rest.get(8).equals("TRUE")) { rv+="vegetarian"; }
+
 		return rv;
 	}
 
@@ -75,24 +69,20 @@ public class Person {
 		isVIP = rv;
 		return rv;
 	}
-	
-	
+
+
 	private boolean isGoingToGala() {
 		boolean rv = false;
-		for(String s: rest) {
-			if(rest.size() > 5 && rest.get(5).equals("TRUE")) {
-				rv = true;
-			}
+		if(rest.size() > 5 && rest.get(5).equals("TRUE")) {
+			rv = true;
 		}
 		return rv;
 	}
-	
+
 	private boolean hasDietaryRestrictions() {
 		boolean rv = false;
-		for(String s: rest) {
-			if(rest.size() > 1 && rest.get(1).equals("TRUE")) {
-				rv = true;
-			}
+		if(rest.size() > 1 && rest.get(1).equals("TRUE")) {
+			rv = true;
 		}
 		return rv;
 	}
@@ -121,6 +111,7 @@ public class Person {
 		chapterList.put(17, "San Antonio");
 		chapterList.put(18, "San Diego");
 		chapterList.put(19, "Silicon Valley");
+		chapterList.put(20, "National");
 	}
 
 	/*
@@ -135,6 +126,21 @@ public class Person {
 		rv += (hasDietRestrictions && dietRestrictions.length()>0) ? " Diet Restriction: "+ dietRestrictions : "";
 		//rv += tagList.get(0);
 		return rv;
+	}
+	
+	public void findSpouse(ArrayList<Person> list) {
+		if(this.spouse != null) {
+			return;
+		}
+		for(Person p: list) {
+			if(p != this) {
+				if(p.lastName.equals(this.lastName) && p.chapter.equals(this.chapter)) {
+					this.spouse = p;
+					p.spouse = this;
+					System.out.println(p +" and "+this+" are spouses (methinks)");
+				}
+			}
+		}
 	}
 }
 

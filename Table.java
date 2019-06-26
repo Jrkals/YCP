@@ -5,6 +5,7 @@ public class Table {
 	Person[] seats = new Person[10];
 	int tableID; // unique to every table
 	String tableName;
+	boolean isVIPTable = false;
 	
 	public Table(int id) {
 		tableID = id;
@@ -23,6 +24,15 @@ public class Table {
 			seats[10-numberOfSpots] = p;
 			numberOfSpots--;
 		}
+	}
+	
+	public String toString(){
+		String rv = "";
+		for(int i = 0; i < 10-numberOfSpots; i++) {
+			rv += seats[i].firstName;
+			rv += ", ";
+		}
+		return rv;
 	}
 
 }

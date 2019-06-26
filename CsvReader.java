@@ -72,7 +72,7 @@ public class CsvReader {
 		return wordsArray;
 	}
 
-	public String[] getItems2() {
+	public void getItems2() {
 		skipFirstLine();
 		while(scan.hasNext()) {
 			String line = scan.nextLine();
@@ -83,8 +83,8 @@ public class CsvReader {
 			// chapter, going_to_gala, gluten, legumes, vegetarian
 			String[] parts = line.split(",");
 			//System.out.println(line);
-			String firstName = "No First Name";
-			String lastName = "No Last Name";
+			String firstName = "No First Name"; // these should be replaced with actual names
+			String lastName = "No Last Name"; // ''
 			String[] name = parts[1].split(" "); 
 			// check to make sure they have a name
 			if(name.length > 1) {
@@ -105,21 +105,10 @@ public class CsvReader {
 
 			Person p = new Person(firstName, lastName, tags, rest);
 			people.add(p);
-			words.addAll(rest);
-			words.addAll(tags);
-			words.add(firstName);
-			words.add(lastName);
 		}
-		int sizeOfWords = words.size();
 		System.out.println("The number of people is "+people.size());
-		//Put words into fixed size array
-		String[] wordsArray = new String[sizeOfWords];
-		for(int i = 0; i < sizeOfWords; i++) {
-			wordsArray[i] = words.get(i);
-		}
-		scan.close();
-		return wordsArray;
 
+		scan.close();
 	}
 	/*
 	 * finds where the tag list starts and begins
@@ -182,7 +171,7 @@ public class CsvReader {
 				rv.add(p);
 			}
 		}
-		System.out.println("The number of people attedning the Gala is "+rv.size());
+		System.out.println("The number of people attending the Gala is "+rv.size());
 		return rv;
 	}
 

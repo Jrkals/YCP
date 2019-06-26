@@ -12,7 +12,6 @@ public class Arranger {
 	//e.g., Dallas: [John, Mary, Sue], Austin: [Jacob, Juan, Maria]
 	HashMap<String, ArrayList<Person>> chapterList = new HashMap<>();
 
-
 	public Arranger(ArrayList<Person> ppl, Table[] tbls) {
 		peopleList.addAll(ppl);
 		tableList.addAll(Arrays.asList(tbls));
@@ -23,9 +22,9 @@ public class Arranger {
 	}
 
 	void arrangeTables() {
-		int count = 0; // current chapter counter
 		boolean done = false;
-		String currentChapter = chapterMap.get(0); //"Austin"
+		//String currentChapter = chapterMap.get(0); //"Austin"
+		String currentChapter = getNewChapter2();
 		for(Table t: tables) {
 			//System.out.println("current chapter is "+currentChapter);
 			//System.out.println("table +"+t.tableID+" # spots "+t.numberOfSpots);
@@ -39,7 +38,7 @@ public class Arranger {
 					// if finished with this chapter, get a new one
 					if(chapterList.get(currentChapter).size() == 0) {
 						chapterList.remove(currentChapter); // done with this
-						currentChapter = getNewChapter();
+						currentChapter = getNewChapter2();
 						//Utilities.printHashMap(chapterList);
 						//System.out.println("new chapter is "+currentChapter);
 					}
@@ -70,6 +69,22 @@ public class Arranger {
 			}
 		}
 		return null;
+	}
+	
+	/*
+	 * a slow linear search through a hashmap which I am treating
+	 * as a priority queue the chapters with the lowest members get picked first
+	 */
+	private String getNewChapter2() {
+		String biggestChapter = "";
+		int min = 500;
+		for(String chapterName: chapterList.keySet()) {
+			if(chapterList.get(chapterName).size() < min) {
+				min = chapterList.get(chapterName).size();
+				biggestChapter = chapterName;
+			}
+		}
+		return biggestChapter;
 	}
 
 	void printArrangement() {
