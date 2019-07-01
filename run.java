@@ -4,18 +4,20 @@ import java.util.HashMap;
 
 public class run {
 	final static boolean TESTINGMODE = true;
+	final static boolean MAKENEWDATA = false;
 	static int numPeople = 500;
-	
+
 	public static void main(String[] args) {
 		String fileName = "";
 		if(TESTINGMODE) {
 			fileName = "/Users/justin/Dropbox/YCP/Seating_Project/fakeData.csv";
-			
-			fakeDataCreator fdc = new fakeDataCreator(fileName, numPeople);
-			try {
-				fdc.writeToFile();
-			} catch (IOException e) {
-				e.printStackTrace();
+			if(MAKENEWDATA) {
+				fakeDataCreator fdc = new fakeDataCreator(fileName, numPeople);
+				try {
+					fdc.writeToFile();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 		else {
@@ -58,6 +60,9 @@ public class run {
 		Arranger2 arr = new Arranger2(people, tables, VIPTables);
 		arr.arrangeTables();
 		//arr.printArrangement();
+		arr.checkSpousesAndTables();
+		arr.printArrangement();
+
 
 	}
 

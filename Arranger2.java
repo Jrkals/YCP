@@ -1,10 +1,11 @@
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 
 public class Arranger2 {
 	ArrayList<Person> peopleList = new ArrayList<>();
-	ArrayList<Person> VIPList = new ArrayList<>();
+	ArrayList<Person> VIPList = new ArrayList<>(); 
 	Table[] tables;
 	Table[] vipTables;
 	ArrayList<Table> tableList = new ArrayList<>();
@@ -16,7 +17,7 @@ public class Arranger2 {
 	HashMap<String, ArrayList<Person>> VIPChapterList = new HashMap<>();
 	HashMap<String, ArrayList<Table>> tableAllocation = new HashMap<>();
 	HashMap<String, ArrayList<Table>> VIPTableAllocation = new HashMap<>();
-	
+
 	public Arranger2(ArrayList<Person> ppl, Table[] tbls, Table[] viptables) {
 		peopleList.addAll(ppl);
 		fillVIPList();
@@ -27,9 +28,27 @@ public class Arranger2 {
 		tables = tbls;
 		vipTables = viptables;
 		fillChapterList();  // fills chapterList
-		
+
 		fillVIPChapterList();
 		addChapters(); // fills chapterMap
+
+		//find spouses
+		findSpouses(ppl);
+	}
+	/*
+	 * 
+	 */
+	private void findSpouses(ArrayList<Person> ppl) {
+		int numCouples = 0;
+		for(Person p: peopleList) {
+			if(p.spouse != null) continue; // don't count twice
+
+			p.findSpouse(peopleList);
+			if(p.spouse != null) {
+				numCouples++;
+			}
+		}
+		System.out.println("there are "+numCouples+" couples");
 	}
 	/*
 	 * list that contains vip members arranged in their chapters
@@ -61,7 +80,6 @@ public class Arranger2 {
 		System.out.println("Doing the rest...");
 		allocateLeftovers(chapterList, tableAllocation, tableList);
 		System.out.println("Done");
-		printArrangement();
 	}
 
 	private void allocateLeftovers(HashMap<String, ArrayList<Person>> list, 
@@ -74,7 +92,7 @@ public class Arranger2 {
 			int numTablesToAllocate =(numberOfPeople % 10 == 0) ? numberOfPeople/10 : numberOfPeople / 10 + 1; // useful if there are still full tables available
 			// if you can allocate these people to new tables
 			if(table_list.size() >= numTablesToAllocate) {
-				System.out.println("Allocating "+numTablesToAllocate+" table(s) to chapter "+currentChapter);
+				//System.out.println("Allocating "+numTablesToAllocate+" table(s) to chapter "+currentChapter);
 				allocation.put(currentChapter, new ArrayList<Table>());
 				//pop of the number of tables you are allocating and allocate
 				for(int i = 0; i < numTablesToAllocate; i++) {
@@ -82,7 +100,7 @@ public class Arranger2 {
 				}
 				// Allocate the seats specifically
 				int leftOver = (numberOfPeople / numTablesToAllocate)%10;
-				System.out.println("left over is "+leftOver);
+				//System.out.println("left over is "+leftOver);
 				for(Table t: allocation.get(currentChapter)) {
 					// e.g., 21 people over 3 tables. 21 % 3 = 0
 					for(int i = 0; i < numberOfPeople/numTablesToAllocate; i++) {
@@ -279,5 +297,45 @@ public class Arranger2 {
 			}
 		}
 		return biggestChapter;
+	}
+
+	public void checkSpousesAndTables(){
+		System.out.println("Making sure spouses are at the right spots...");
+		for(Table t: tables) {
+			//System.out.println(t);
+			for(Person p: t.seats) {
+				if(p == null) continue; // empty table spot, skip these
+				
+				if(p.hasSpouse() && p.spouse.table != p.table) {
+					//System.out.println(p.firstName+" and "+p.spouse.firstName+ " "+p.lastName+
+					//		" need to be together but aren't");
+					//System.out.println(p.firstName+" t: "+p.table.tableID+" "+p.spouse.firstName+
+					//		" t:"+p.spouse.table.tableID);
+					if(t.numberOfSpots> 0) { //simply move into a free spot
+						p.spouse.table.removePerson(p.spouse);
+						//System.out.println("just removed "+p.spouse.firstName+" "+
+						//p.spouse.lastName+ " from table "+p.spouse.table.tableID);
+						//System.out.println("Adding "+p.spouse.firstName+" to table "+t.tableID);
+						t.addPerson(p.spouse);
+					}
+					else {
+						//swap two people
+						//System.out.println("Swapping");
+						Person personToSwap = null;
+						for(Person q: t.seats) {
+							if(!q.hasSpouse()) {
+								personToSwap = q;
+							}
+						}
+						// replace spouseless person with p's spouse
+						Table oldSpouseTable = p.spouse.table;
+						t.replacePerson(personToSwap, p.spouse); 
+						// move swapped person to p.spouse's old table
+						oldSpouseTable.replacePerson(p.spouse, personToSwap); 
+						//System.out.println("swapped "+p.spouse.firstName+" and "+personToSwap.firstName);
+					}
+				}
+			}
+		}
 	}
 }

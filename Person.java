@@ -15,6 +15,7 @@ public class Person {
 	String dietRestrictions;
 	Person spouse;
 	boolean hasPotentialCity;
+	Table table;
 
 	public Person(String fnm, String lnm, ArrayList<String> tglist, ArrayList<String> rst) {
 		firstName = fnm;
@@ -30,6 +31,7 @@ public class Person {
 			dietRestrictions = fetchDietRestrictions();
 		}
 		spouse = null;
+		table = null;
 	}
 
 	private String fetchDietRestrictions() {
@@ -132,7 +134,9 @@ public class Person {
 		if(this.spouse != null) {
 			return;
 		}
+		
 		for(Person p: list) {
+			
 			if(p != this) {
 				if(p.lastName.equals(this.lastName) && p.chapter.equals(this.chapter)) {
 					this.spouse = p;
@@ -141,6 +145,10 @@ public class Person {
 				}
 			}
 		}
+	}
+	
+	boolean hasSpouse() {
+		return this.spouse != null;
 	}
 }
 
