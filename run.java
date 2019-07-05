@@ -56,10 +56,14 @@ public class run {
 			Table t = new Table(map.get(i));  
 			VIPTables[i] = t;
 		}
+		//read in spouse List
+		HashMap<String, String> spouseMap = new HashMap<>();
+		String spouseFile = "/Users/justin/Dropbox/YCP/Seating_Project/spouseList.csv";
+		SpouseReader sr = new SpouseReader(spouseFile);
+		spouseMap = sr.getMap();
 
-		Arranger2 arr = new Arranger2(people, tables, VIPTables);
+		Arranger2 arr = new Arranger2(people, tables, VIPTables, spouseMap);
 		arr.arrangeTables();
-		//arr.printArrangement();
 		arr.checkSpousesAndTables();
 		arr.printArrangement();
 

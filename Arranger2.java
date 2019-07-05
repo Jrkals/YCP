@@ -1,7 +1,6 @@
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 
 public class Arranger2 {
 	ArrayList<Person> peopleList = new ArrayList<>();
@@ -18,7 +17,8 @@ public class Arranger2 {
 	HashMap<String, ArrayList<Table>> tableAllocation = new HashMap<>();
 	HashMap<String, ArrayList<Table>> VIPTableAllocation = new HashMap<>();
 
-	public Arranger2(ArrayList<Person> ppl, Table[] tbls, Table[] viptables) {
+	public Arranger2(ArrayList<Person> ppl, Table[] tbls, Table[] viptables, 
+			HashMap<String, String> spsMap) {
 		peopleList.addAll(ppl);
 		fillVIPList();
 		tableList.addAll(Arrays.asList(tbls));
@@ -33,7 +33,8 @@ public class Arranger2 {
 		addChapters(); // fills chapterMap
 
 		//find spouses
-		findSpouses(ppl);
+		//findSpouses(ppl);
+		findSpousesNew(spsMap);
 	}
 	/*
 	 * 
@@ -333,9 +334,45 @@ public class Arranger2 {
 						// move swapped person to p.spouse's old table
 						oldSpouseTable.replacePerson(p.spouse, personToSwap); 
 						//System.out.println("swapped "+p.spouse.firstName+" and "+personToSwap.firstName);
-					}
-				}
-			}
+					} // else
+				} // end of if
+			} // end of for people
+		} // end of for tables
+	} // end of method
+	
+	/*
+	 * goes through map and list and matches spouses
+	 */
+	private void findSpousesNew(HashMap<String, String> spouseMap) {
+		for(String key: spouseMap.keySet()) {
+			// find where this person is in the peopleList
+			int indexp1 = findIndexOfPerson(key);
+			Person p1 = peopleList.get(indexp1);
+			// find where their spouse is in the list
+			int spouseindex = findIndexOfPerson(spouseMap.get(key));
+			Person p2 = peopleList.get(spouseindex);
+			p1.spouse = p2;
+			p2.spouse = p1;
+			//TODO check if this is necessary with java call by reference???
+			// assign them as each other's spouses
+			peopleList.set(indexp1, p1); // put updated person back in
+			peopleList.set(spouseindex, p2); // put spouse back in
 		}
 	}
+	/*
+	 * search peopleList for person of the specified name
+	 * string is a full name e.g., "Justin Kalan"
+	 */
+	private int findIndexOfPerson(String string) {
+		for(int i = 0; i < peopleList.size(); i++) {
+			// check if first and last name match
+			if(peopleList.get(i).firstName.equals(string.split(" ")[0]) &&
+					peopleList.get(i).lastName.equals(string.split(" ")[1])){
+				return i;
+			}
+				
+		}
+		return -1; // should never happen
+	}
+	
 }

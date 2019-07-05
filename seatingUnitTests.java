@@ -34,7 +34,7 @@ public class seatingUnitTests {
 	public void testPickBiggestChapter() {
 		makeFakeData();
 	
-		Arranger2 arr = new Arranger2(new ArrayList<Person>(), new Table[1], new Table[1]);
+		Arranger2 arr = new Arranger2(new ArrayList<Person>(), new Table[1], new Table[1], new HashMap<>());
 		String rv = arr.getBiggestChapter(list);
 		System.out.println(rv);
 		assertFalse(rv.equals("Unknown"));
