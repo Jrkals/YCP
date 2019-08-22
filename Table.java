@@ -61,7 +61,18 @@ public class Table {
 				return i;
 			}
 		}
-		return -1; // not found should never return this
+		return -1; // not found, should never return this
+	}
+	
+	public int findInArray(String fullName) {
+		for(int i = 0; i < seats.length; i++) {
+			if(seats[i] == null) continue;
+			if(seats[i].firstName.equalsIgnoreCase(fullName.split(" ")[0]) &&
+					seats[i].lastName.equalsIgnoreCase(fullName.split(" ")[1])) {
+				return i;
+			}
+		}
+		return -1; // not found, should never return this
 	}
 
 	public String toString(){
@@ -72,5 +83,5 @@ public class Table {
 		}
 		return rv;
 	}
-
+	
 }

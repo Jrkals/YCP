@@ -16,6 +16,11 @@ public class Person {
 	Person spouse;
 	boolean hasPotentialCity;
 	Table table;
+	
+	public Person(String fnm, String lnm) {
+		firstName = fnm;
+		lastName = lnm;
+	}
 
 	public Person(String fnm, String lnm, ArrayList<String> tglist, ArrayList<String> rst) {
 		firstName = fnm;
@@ -123,9 +128,10 @@ public class Person {
 	 */
 	public String toString() {
 		String rv = "";
-		rv += "Name: "+firstName+" "+lastName+", Chapter: "+chapter+",";
-		rv += (isVIP) ? " VIP" : "";
-		rv += (hasDietRestrictions && dietRestrictions.length()>0) ? " Diet Restriction: "+ dietRestrictions : "";
+		rv += firstName+" "+lastName+","+chapter+",";
+		rv += (isVIP) ? "VIP," : ",";
+		rv += (hasDietRestrictions && dietRestrictions.length()>0) ? dietRestrictions : "none,";
+		rv += (hasSpouse()) ? "\t"+spouse.firstName + " "+spouse.lastName : "";
 		//rv += tagList.get(0);
 		return rv;
 	}

@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -10,6 +11,7 @@ public class Arranger2 {
 	ArrayList<Table> tableList = new ArrayList<>();
 	ArrayList<Table> vipTableList = new ArrayList<>();
 	HashMap<Integer, String> chapterMap = new HashMap<>();
+	
 	// maps from chapter -> persons
 	//e.g., Dallas: [John, Mary, Sue], Austin: [Jacob, Juan, Maria]
 	HashMap<String, ArrayList<Person>> chapterList = new HashMap<>();
@@ -192,35 +194,24 @@ public class Arranger2 {
 		} // end of while
 	} // end of method
 
-	void printArrangement() {
-		for(Table t: vipTables) {
-			if(t.numberOfSpots < 10) {
-				System.out.println("Table "+t.tableID);
-				for(int i = 0; i < 10; i++) {
-					System.out.print("seat:"+(i+1)+" ");
-					if(t.seats[i] != null) {
-						System.out.println(t.seats[i]);
-					}
-					else {
-						System.out.println("empty");
-					}
-				}
-			}
+	void printArrangementToScreen() {
+		OutputWriter ow = new OutputWriter("", vipTables, tables);
+		ow.printArrangementToScreen();
+	}
+	
+	void printArrangementToFile(String filename){
+		OutputWriter ow = new OutputWriter(filename, vipTables, tables);
+		try {
+			ow.writeToFile();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
-		for(Table t: tables) {
-			if(t.numberOfSpots < 10) {
-				System.out.println("Table "+t.tableID);
-				for(int i = 0; i < 10; i++) {
-					System.out.print("seat:"+(i+1)+" ");
-					if(t.seats[i] != null) {
-						System.out.println(t.seats[i]);
-					}
-					else {
-						System.out.println("empty");
-					}
-				}
-			}
-		}
+	}
+	
+	void writeArrangementToDatabase() {
+		OutputWriter ow = new OutputWriter("", vipTables, tables);
+		ow.writeToDB();
 	}
 
 	/*
@@ -346,6 +337,7 @@ public class Arranger2 {
 	private void findSpousesNew(HashMap<String, String> spouseMap) {
 		for(String key: spouseMap.keySet()) {
 			// find where this person is in the peopleList
+			System.out.println(key);
 			int indexp1 = findIndexOfPerson(key);
 			Person p1 = peopleList.get(indexp1);
 			// find where their spouse is in the list
