@@ -6,6 +6,7 @@ public class Table {
 	int tableID; // unique to every table
 	String tableName;
 	boolean isVIPTable = false;
+	boolean isModifiable = true; // for DB purposes.
 
 	public Table(int id) {
 		tableID = id;
@@ -25,6 +26,15 @@ public class Table {
 			numberOfSpots--;
 			p.table = this;
 		}
+	}
+	/*
+	 * add person to specific slot. Only used in DatabaseReader.parseTableFromRow
+	 * in case there is a gap in the DB e.g., person, null, person in the tables table
+	 */
+	void addPerson(Person p, int slot) {
+		seats[slot] = p;
+		numberOfSpots--;
+		p.table = this;
 	}
 	/*
 	 * remove a person from the table and free up a spot
@@ -57,6 +67,7 @@ public class Table {
 
 	private int findInArray(Person p) {
 		for(int i = 0; i < seats.length; i++) {
+			System.out.print(seats[i] + " \t");
 			if(seats[i] == p) {
 				return i;
 			}

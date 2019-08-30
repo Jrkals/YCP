@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 
 public class Person {
@@ -12,14 +13,39 @@ public class Person {
 	boolean hasChapter;
 	boolean attendingGala;
 	boolean hasDietRestrictions;
+	boolean hasSpouse;
 	String dietRestrictions;
 	Person spouse;
 	boolean hasPotentialCity;
 	Table table;
 	
+	/*
+	 * constructor used in DatabaseReader.getTables() since its reading just from the tables table in the DB
+	 * which includes only name
+	 */
 	public Person(String fnm, String lnm) {
 		firstName = fnm;
 		lastName = lnm;
+	}
+	/*
+	 * constructor used in DatabaseReader.parsePersonFromRow()
+	 * this uses all the info stored in the database people table
+	 */
+	public Person(String fullName, String diet, String spouse_name, String chpt, String tags, int table_num) {
+		firstName = fullName.split(" ")[0];
+		lastName = fullName.split(" ")[1];
+		dietRestrictions = diet;
+		
+		if(dietRestrictions == null || dietRestrictions.equals("")) {hasDietRestrictions = false;}
+		else {hasDietRestrictions = true;}
+		
+		if(spouse != null) {
+			spouse = new Person(spouse_name.split(" ")[0], spouse_name.split(" ")[1]);
+			hasSpouse = true;
+		}
+		chapter = chpt;
+		tagList.addAll(Arrays.asList(tags.split(" ")));
+		table = new Table(table_num);		
 	}
 
 	public Person(String fnm, String lnm, ArrayList<String> tglist, ArrayList<String> rst) {

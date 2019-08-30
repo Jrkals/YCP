@@ -6,11 +6,15 @@ import java.util.ArrayList;
 
 public class DatabaseReader implements IDatabase {
 	ArrayList<Table> tables = new ArrayList<>();
-	ArrayList<Person> people = new ArrayList<>();
-	
+	ArrayList<Table> modifiableTables = new ArrayList<>();
+
 	Connection conn;
 	public DatabaseReader(Connection c) {
 		this.conn = c;
+	}
+
+	public DatabaseReader() {
+		conn = IDatabase.connectToDB();
 	}
 	ArrayList<Integer> getModifiableTables() {
 		//Connection conn = connectToDB();
@@ -21,7 +25,7 @@ public class DatabaseReader implements IDatabase {
 		else {
 			try {
 				Statement stmt = conn.createStatement();
-				String query = "Select table_number, modifyHuh from tables";
+				String query = "Select table_number, modifyHuh from tables;";
 				ResultSet rs = stmt.executeQuery(query);
 				while(rs.next()) { // loop over results
 					if(rs.getBoolean(2)) { // check to see if the row can be modified
@@ -46,7 +50,7 @@ public class DatabaseReader implements IDatabase {
 		else {
 			try {
 				Statement stmt = conn.createStatement();
-				String query = "Select * from tables";
+				String query = "Select * from tables;";
 				ResultSet rs = stmt.executeQuery(query);
 				while(rs.next()) { // loop over results
 					Table t = parseTableFromRow(rs);
@@ -72,11 +76,12 @@ public class DatabaseReader implements IDatabase {
 			for(int i = 2; i <= 11; i++) { // loop over the names
 				String name = rs.getNString(i);
 				if(name == null) {
-					break;
+					continue;
 				}else {
 					// TODO fix this these people are null basically i.e. just a name
+					// Solution: this is handled in Arranger
 					Person p = new Person(name.split(" ")[0], name.split(" ")[1]);
-					t.addPerson(p);
+					t.addPerson(p, i-1);
 				}
 			}
 			// check vip status
@@ -85,31 +90,85 @@ public class DatabaseReader implements IDatabase {
 				t.isVIPTable = true;
 			}
 
+			// check modifiability status
+			boolean isModifiable = rs.getBoolean(13);
+			if(isModifiable) {
+				t.isModifiable = true;
+			} else {
+				t.isModifiable = false;
+			}
+
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 
 		return t;
 	}
-	ArrayList<Person> getPeople(){
+	/*
+	 * returns the people from the tables table
+	 */
+	ArrayList<Person> getPeopleFromTables(){
+		getTables();
+		ArrayList<Person> ppl = new ArrayList<Person>();
 		for(Table t: tables) {
-			for(int i = 0; i < 9-t.numberOfSpots; i++) {
-				people.add(t.seats[i]);
+			for(int i = 0; i <= 10-t.numberOfSpots; i++) {
+				if(t.seats[i] != null)
+					ppl.add(t.seats[i]);
 			}
 		}
-		return people;
+		return ppl;
+	}
+	/*
+	 * returns the people in the people table
+	 */
+	ArrayList<Person> getPeople(){
+		ArrayList<Person> ppl = new ArrayList<>();
+		if(conn == null) {
+			System.out.println("Cannot connect to DB");
+		}
+		else {
+			try {
+				Statement stmt = conn.createStatement();
+				String query = "Select * from people;";
+				ResultSet rs = stmt.executeQuery(query);
+				while(rs.next()) { // loop over results
+					Person p = parsePersonFromRow(rs);
+					ppl.add(p);
+				}
+				//System.out.println(rs.toString());
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}			
+		} // end of else
+
+		return ppl;
+	}
+
+	private Person parsePersonFromRow(ResultSet rs) {
+		Person p = null;
+		String name;
+		try {
+			name = rs.getString(1);
+			String diet = rs.getString(2);
+			String spouse_name = rs.getString(3);
+			String chapter = rs.getString(4);
+			String tags = rs.getString(5);
+			int table_num = rs.getInt(6);
+			p = new Person(name, diet, spouse_name, chapter, tags, table_num);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return p;
 	}
 
 	/*
 	 * tells whether a person exists in the list of people from the tables table in confSeating DB
 	 */
 	boolean personExists(String person) {
-		if(people.size() == 0) {
-			getReadyToFindPeople();
-		}
-		//System.out.println("Checking this against the list of "+people.size()+" people...");
-		for(Person p: people) {
-			if(!(p.firstName+p.lastName).equalsIgnoreCase(person)){
+		ArrayList<Person> ppl = getPeople();
+		System.out.println("Checking this against the list of "+ppl.size()+" people...");
+		for(Person p: ppl) {
+			if(!(p.firstName+p.lastName).equals(person)){
 				return true;
 			}
 		}
@@ -122,7 +181,7 @@ public class DatabaseReader implements IDatabase {
 	 */
 	void getReadyToFindPeople() {
 		getTables();
-		getPeople();
+		getPeopleFromTables();
 	}
 
 }

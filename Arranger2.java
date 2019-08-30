@@ -2,20 +2,26 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class Arranger2 {
 	ArrayList<Person> peopleList = new ArrayList<>();
 	ArrayList<Person> VIPList = new ArrayList<>(); 
+	
 	Table[] tables;
 	Table[] vipTables;
+	
 	ArrayList<Table> tableList = new ArrayList<>();
 	ArrayList<Table> vipTableList = new ArrayList<>();
+	
 	HashMap<Integer, String> chapterMap = new HashMap<>();
 	
 	// maps from chapter -> persons
 	//e.g., Dallas: [John, Mary, Sue], Austin: [Jacob, Juan, Maria]
 	HashMap<String, ArrayList<Person>> chapterList = new HashMap<>();
 	HashMap<String, ArrayList<Person>> VIPChapterList = new HashMap<>();
+	
 	HashMap<String, ArrayList<Table>> tableAllocation = new HashMap<>();
 	HashMap<String, ArrayList<Table>> VIPTableAllocation = new HashMap<>();
 
@@ -35,7 +41,6 @@ public class Arranger2 {
 		addChapters(); // fills chapterMap
 
 		//find spouses
-		//findSpouses(ppl);
 		findSpousesNew(spsMap);
 	}
 	/*
@@ -72,7 +77,9 @@ public class Arranger2 {
 	}
 
 	void arrangeTables() {
-		// first alloc to VIPS
+		//first alloc the tables that are non modifiable in the db. These have already been set
+		allocateNonModifiableTables();
+		// second alloc to VIPS
 		System.out.println("Doing VIPS...");
 		allocateTableToList(VIPChapterList, VIPTableAllocation, vipTableList);
 		//printArrangement();
@@ -84,7 +91,97 @@ public class Arranger2 {
 		allocateLeftovers(chapterList, tableAllocation, tableList);
 		System.out.println("Done");
 	}
-
+	
+	/*
+	 * some tables in the Database are not changeable 
+	 * get these and set them here before really running the automated allocation
+	 */
+	private void allocateNonModifiableTables() {
+		DatabaseReader dr = new DatabaseReader();
+		List<Table> allTables = dr.getTables();
+		allTables = allTables.stream().filter(t -> !t.isModifiable).collect(Collectors.toList());
+		for(Table t: allTables) {
+			if(t.isVIPTable) {
+				vipTables[findIndexOfTableID(t)] = t;
+				/*
+				 * the people in this table have names only. Find them in the list of people passed into
+				 * this class and then replace them.
+				 */
+				findPeopleForTable(t); 
+			}
+			else {
+				tables[findIndexOfTableID(t)] = t; 
+				findPeopleForTable(t);
+			}
+		}
+		
+	}
+	/*
+	 * returns where in an array of tables the table with the given table id is
+	 */
+	private int findIndexOfTableID(Table t) {
+		if(t.isVIPTable) {
+			for (int i = 0; i < vipTables.length; i++) {
+				if(vipTables[i].tableID == t.tableID) {
+					return i;
+				}
+			}
+		}
+		else {
+			for(int i = 0; i < tables.length; i++) {
+				if(tables[i].tableID == t.tableID) {
+					return i;
+				}
+			}
+		}
+		System.out.println("couldn't find table "+t.tableID);
+		return -1; // should never happen
+	}
+	/*
+	 * matches the names of the people in t with people in peopleList
+	 * It replaces the people in t with those from peopleList since the people
+	 * in t have only names
+	 */
+	private void findPeopleForTable(Table t) {
+		for(int i = 0; i < 10; i++) {
+			if(t.seats[i] != null) {
+				Person p = getPersonFromPeopleList(t.seats[i]);
+				t.seats[i] = p; // assign this person to the table
+				p.table = t;
+				// remove this person from the list so they don't get allocated to a table by the 
+				// allocator again
+				if(p.isVIP) {
+					String chapter = p.chapter;
+					VIPChapterList.get(p.chapter).remove(p);
+					// check to see if you have gotten rid of everyone from that chapter
+					if(VIPChapterList.get(chapter).size() == 0) {
+						VIPChapterList.remove(chapter);
+					}
+				}else {
+					String chapter = p.chapter;
+					chapterList.get(p.chapter).remove(p);
+					// check to see if you have gotten rid of everyone from that chapter
+					if(chapterList.get(chapter).size() == 0) {
+						chapterList.remove(chapter);
+					}
+				}
+			}
+		}
+		
+	}
+	/*
+	 * finds a person of the specified name and returns them
+	 */
+	private Person getPersonFromPeopleList(Person person) {
+		System.out.println(person.firstName+" "+person.lastName);
+		for(Person p: peopleList) {
+			if(p.firstName.equalsIgnoreCase(person.firstName) && p.lastName.equalsIgnoreCase(person.lastName)) {
+				return p;
+			}
+		}
+		System.out.println("couldn't find: "+person.firstName+" "+person.lastName);
+		return null; //should never do this.
+	}
 	private void allocateLeftovers(HashMap<String, ArrayList<Person>> list, 
 			HashMap<String, ArrayList<Table>> allocation, ArrayList<Table> table_list) {
 		while(!list.isEmpty()) {
@@ -95,7 +192,7 @@ public class Arranger2 {
 			int numTablesToAllocate =(numberOfPeople % 10 == 0) ? numberOfPeople/10 : numberOfPeople / 10 + 1; // useful if there are still full tables available
 			// if you can allocate these people to new tables
 			if(table_list.size() >= numTablesToAllocate) {
-				//System.out.println("Allocating "+numTablesToAllocate+" table(s) to chapter "+currentChapter);
+				System.out.println("Allocating "+numTablesToAllocate+" table(s) to chapter "+currentChapter);
 				allocation.put(currentChapter, new ArrayList<Table>());
 				//pop of the number of tables you are allocating and allocate
 				for(int i = 0; i < numTablesToAllocate; i++) {
@@ -153,33 +250,33 @@ public class Arranger2 {
 			HashMap<String, ArrayList<Table>> allocation, ArrayList<Table> table_list) {
 		while(!list.isEmpty()) {
 			String currentChapter = getBiggestChapter(list);
-			//System.out.println("biggest chapter is "+currentChapter);
+			System.out.println("biggest chapter is "+currentChapter);
 			int numberOfPeople = list.get(currentChapter).size();
-			//System.out.println("there are "+numberOfPeople+ " people from "+currentChapter);
+			System.out.println("there are "+numberOfPeople+ " people from "+currentChapter);
 			int numTablesToAllocate = numberOfPeople / 10 + 1;
 			// should never happen unless there are like 500 VIPS
 			if(numTablesToAllocate > table_list.size()) {
-				//System.out.println("this chapter can't get its own table");
+				System.out.println("this chapter can't get its own table");
 				allocateLeftovers(list, allocation, table_list);
 				return;
 			}
 			else {
-				//System.out.println("eAllocating "+numTablesToAllocate+" table(s) to "+currentChapter);
+				System.out.println("eAllocating "+numTablesToAllocate+" table(s) to "+currentChapter);
 				allocation.put(currentChapter, new ArrayList<Table>());
 				//pop of the number of tables you are allocating and allocate
 				for(int i = 0; i < numTablesToAllocate; i++) {
 					allocation.get(currentChapter).add(table_list.remove(0));
-					//System.out.println("used table "+allocation.get(currentChapter).get(i).tableID);
+					System.out.println("used table "+allocation.get(currentChapter).get(i).tableID);
 				}
 				// Allocate the seats specifically
 				// with 1 person this is 1. Hence the && on line 152
 				int leftOver = numberOfPeople % (numberOfPeople/numTablesToAllocate); 
-				//System.out.println("leftover is "+leftOver);
+				System.out.println("leftover is "+leftOver);
 				for(Table t: allocation.get(currentChapter)) {
-					//System.out.println("table "+t.tableID);
+					System.out.println("table "+t.tableID);
 					// e.g., 21 people over 3 tables. 21 % 3 = 0
 					for(int i = 0; i < numberOfPeople/numTablesToAllocate; i++) {
-						//System.out.println("adding "+list.get(currentChapter).get(0));
+						System.out.println("adding "+list.get(currentChapter).get(0));
 						t.addPerson(list.get(currentChapter).remove(0));
 					}
 					// e.g., 29 people over 3 tables 29 % 3 = 2
@@ -212,6 +309,7 @@ public class Arranger2 {
 	void writeArrangementToDatabase() {
 		OutputWriter ow = new OutputWriter("", vipTables, tables);
 		ow.writeToDB();
+		ow.writePeopleToDB();
 	}
 
 	/*
@@ -345,7 +443,7 @@ public class Arranger2 {
 			Person p2 = peopleList.get(spouseindex);
 			p1.spouse = p2;
 			p2.spouse = p1;
-			//TODO check if this is necessary with java call by reference???
+			//TODO check if this is necessary with java references???
 			// assign them as each other's spouses
 			peopleList.set(indexp1, p1); // put updated person back in
 			peopleList.set(spouseindex, p2); // put spouse back in

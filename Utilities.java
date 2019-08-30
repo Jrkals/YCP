@@ -6,6 +6,20 @@ import java.util.HashMap;
  * these are all static and are called by class name
  */
 public class Utilities {
+	
+	/*
+	 * for writing a tag list to the db
+	 */
+	static String asQuotedString(ArrayList<String> list) {
+		String rv = ""; // add beginning quote
+		for(int i = 0; i < list.size(); i++) {
+			rv += list.get(i);
+			if(i < list.size()-1) // don't add comma on last item
+				rv += ",";
+		}
+		rv += "\""; // add ending quote
+		return rv;
+	}
 
 	// print a one dimensional int array
 	static void printArray(int[] a) {

@@ -2,6 +2,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.List;
 
 public class SeatSwapper implements IDatabase {
 	ArrayList<Table> tables = new ArrayList<>();
@@ -41,14 +42,24 @@ public class SeatSwapper implements IDatabase {
 		try {
 			statement = conn.createStatement();
 			String query1 = makeUpdateStatement(p1, p2Table, p2LocAtTable);
+			System.out.println(query1);
 			String query2 = makeUpdateStatement(p2, p1Table, p1LocAtTable);
+			System.out.println(query2);
 			String query3 = makeLockStatement(p1Table); // change the modifyHuh value to 0
+			System.out.println(query3);
 			String query4 = makeLockStatement(p2Table); // change the modifyHuh value to 0
+			System.out.println(query4);
+			String query5 = makeUpdatePersonStatement(p2, p1Table); // change table_number in people table
+			System.out.println(query5);
+			String query6 = makeUpdatePersonStatement(p1, p2Table); // change table_number in people table
+			System.out.println(query6);
 			try {
 				statement.addBatch(query1);
 				statement.addBatch(query2);
 				statement.addBatch(query3);
 				statement.addBatch(query4);
+				statement.addBatch(query5);
+				statement.addBatch(query6);
 				statement.executeBatch();
 			} catch (SQLException e) {
 				e.printStackTrace();
@@ -72,7 +83,7 @@ public class SeatSwapper implements IDatabase {
 	//TODO not working. Find some way to keep cases constant
 	private String getRealName(String p1) {
 		DatabaseReader dr = new DatabaseReader(conn);
-		ArrayList<Person> people = dr.getPeople();
+		ArrayList<Person> people = dr.getPeopleFromTables();
 		for(Person p: people) {
 			if(p.firstName.equalsIgnoreCase(p1.split(" ")[0]) && 
 					p.lastName.equalsIgnoreCase(p1.split(" ")[1])){
@@ -97,8 +108,11 @@ public class SeatSwapper implements IDatabase {
 	private String makeUpdateStatement(String person, int Table, int LocAtTable) {
 		String query = "UPDATE tables SET person_"+LocAtTable+" = \""+person+"\"";
 		query +=" WHERE table_number = "+Table+";";
-		System.out.println(query);
 		return query;
+	}
+	// change the table number in the people table
+	private String makeUpdatePersonStatement(String person, int table) {
+		return "UPDATE people SET table_number = "+table+" WHERE name = \""+person+"\";";	 
 	}
 	// p is "FName LName"
 	private boolean verifyName(String p) {
@@ -109,7 +123,10 @@ public class SeatSwapper implements IDatabase {
 
 		return false;
 	}
-
+	/*
+	 * finds where in a table in the db a person is 
+	 * e.g., spot 6 of some table
+	 */
 	private int findTableForName(String name) {
 		DatabaseReader dr = new DatabaseReader(conn);
 		tables = dr.getTables();	
@@ -120,6 +137,43 @@ public class SeatSwapper implements IDatabase {
 			}
 		}
 		return -1; // should never happen
+	}
+	/*
+	 * finds a name in the given table
+	 */
+	private int findNameInTable(String fullName, int tableNum) {
+		for(Table t: tables) {
+			if(t.tableID == tableNum) {
+				return t.findInArray(fullName);
+			}
+		}
+		return -1;
+	}
+	
+	public void deletePeople(List<Person> ppl) {
+		System.out.println("In delete People");
+		for(Person p: ppl) {
+			int tableNum = findTableForName(p.firstName+" "+p.lastName);
+			int loc = findNameInTable(p.firstName+" "+p.lastName, tableNum);
+			String deleteTablesStatement = "UPDATE tables SET person_"+(loc+1)+" = NULL WHERE person_"
+					+(loc+1)+" = \""+ p.firstName+ " "+p.lastName+"\";";
+			System.out.println(deleteTablesStatement);
+			String deletePeopleStatement = "DELETE FROM people WHERE name = \""+p.firstName+ " "+p.lastName+"\";";
+			System.out.println(deletePeopleStatement);
+			Statement stmt;
+			try {
+				stmt = this.conn.createStatement();
+				stmt.addBatch(deleteTablesStatement);
+				stmt.addBatch(deletePeopleStatement);
+				int[] result = stmt.executeBatch();
+				for(int i = 0; i < result.length; i++) {
+					System.out.println(result[i]);
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			
+		}
 	}
 
 	Connection connectToDB() {
