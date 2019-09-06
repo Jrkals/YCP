@@ -22,25 +22,42 @@ public class Person {
 	/*
 	 * constructor used in DatabaseReader.getTables() since its reading just from the tables table in the DB
 	 * which includes only name
-	 */
+	 
 	public Person(String fnm, String lnm) {
 		firstName = fnm;
 		lastName = lnm;
+	}*/
+	
+	public Person(String fullName) {
+		String parts[] = fullName.split(" ");
+		if(parts.length == 2) {
+			firstName = parts[0];
+			lastName = parts[1];
+		}
+		if(parts.length == 3) {
+			firstName = parts[0] + " "+parts[1];
+			lastName = parts[2];
+		}
+		if(parts.length == 4) {
+			firstName = parts[0] + " "+ parts[1] + " "+parts[2];
+			lastName = parts[3];
+		}
 	}
 	/*
 	 * constructor used in DatabaseReader.parsePersonFromRow()
 	 * this uses all the info stored in the database people table
 	 */
 	public Person(String fullName, String diet, String spouse_name, String chpt, String tags, int table_num) {
-		firstName = fullName.split(" ")[0];
-		lastName = fullName.split(" ")[1];
+		Person temp = new Person(fullName);
+		firstName = temp.firstName;
+		lastName = temp.lastName;
 		dietRestrictions = diet;
 		
 		if(dietRestrictions == null || dietRestrictions.equals("")) {hasDietRestrictions = false;}
 		else {hasDietRestrictions = true;}
 		
 		if(spouse != null) {
-			spouse = new Person(spouse_name.split(" ")[0], spouse_name.split(" ")[1]);
+			spouse = new Person(spouse_name);
 			hasSpouse = true;
 		}
 		chapter = chpt;
@@ -67,12 +84,13 @@ public class Person {
 
 	private String fetchDietRestrictions() {
 		String rv = "";
-		
+		rv = rest.get(0);
+		/*System.out.println("Fetching diet for "+firstName+ " "+lastName);
 		if(rest.get(2).equals("TRUE")) { rv+="diary,"; }
 		if(rest.get(3).equals("TRUE")) { rv+="treenuts,"; }
 		if(rest.get(6).equals("TRUE")) { rv+="gluten,"; }
 		if(rest.get(7).equals("TRUE")) { rv+="legumes/peanuts,"; }
-		if(rest.get(8).equals("TRUE")) { rv+="vegetarian"; }
+		if(rest.get(8).equals("TRUE")) { rv+="vegetarian"; }*/
 
 		return rv;
 	}
@@ -105,16 +123,16 @@ public class Person {
 
 
 	private boolean isGoingToGala() {
-		boolean rv = false;
-		if(rest.size() > 5 && rest.get(5).equals("TRUE")) {
-			rv = true;
+		boolean rv = true;
+		if(rest.size() > 2 && rest.get(2).equals("FALSE")) {
+			rv = false;
 		}
 		return rv;
 	}
 
 	private boolean hasDietaryRestrictions() {
 		boolean rv = false;
-		if(rest.size() > 1 && rest.get(1).equals("TRUE")) {
+		if(rest.size() > 0 && rest.get(0).equals("None") || rest.get(0).equals("")) {
 			rv = true;
 		}
 		return rv;

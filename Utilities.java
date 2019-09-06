@@ -17,7 +17,11 @@ public class Utilities {
 			if(i < list.size()-1) // don't add comma on last item
 				rv += ",";
 		}
-		rv += "\""; // add ending quote
+		if(!rv.equals(""))
+			rv += "\""; // add ending quote
+		else {
+			rv = "\"\"";
+		}
 		return rv;
 	}
 
@@ -43,9 +47,9 @@ public class Utilities {
 		System.out.println();
 	}
 	
-	static void printArrayList(ArrayList<String> al) {
+	static void printArrayList(ArrayList<Person> al) {
 		for(int i = 0; i < al.size(); i++) {
-			System.out.print(al.get(i)+" ");
+			System.out.println(al.get(i)+" ");
 		}
 		System.out.println();
 	}

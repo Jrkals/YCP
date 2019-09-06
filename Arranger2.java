@@ -159,6 +159,10 @@ public class Arranger2 {
 					}
 				}else {
 					String chapter = p.chapter;
+					//System.out.println(p.chapter);
+					//System.out.println(chapterList);
+					//System.out.println(chapterList.get(p.chapter));
+					//if(chapterList.get(p.chapter).contains(p)) // in case a duplicate was already deleted
 					chapterList.get(p.chapter).remove(p);
 					// check to see if you have gotten rid of everyone from that chapter
 					if(chapterList.get(chapter).size() == 0) {
@@ -250,9 +254,9 @@ public class Arranger2 {
 			HashMap<String, ArrayList<Table>> allocation, ArrayList<Table> table_list) {
 		while(!list.isEmpty()) {
 			String currentChapter = getBiggestChapter(list);
-			System.out.println("biggest chapter is "+currentChapter);
+			//System.out.println("biggest chapter is "+currentChapter);
 			int numberOfPeople = list.get(currentChapter).size();
-			System.out.println("there are "+numberOfPeople+ " people from "+currentChapter);
+			//System.out.println("there are "+numberOfPeople+ " people from "+currentChapter);
 			int numTablesToAllocate = numberOfPeople / 10 + 1;
 			// should never happen unless there are like 500 VIPS
 			if(numTablesToAllocate > table_list.size()) {
@@ -261,7 +265,7 @@ public class Arranger2 {
 				return;
 			}
 			else {
-				System.out.println("eAllocating "+numTablesToAllocate+" table(s) to "+currentChapter);
+				//System.out.println("eAllocating "+numTablesToAllocate+" table(s) to "+currentChapter);
 				allocation.put(currentChapter, new ArrayList<Table>());
 				//pop of the number of tables you are allocating and allocate
 				for(int i = 0; i < numTablesToAllocate; i++) {
@@ -271,12 +275,12 @@ public class Arranger2 {
 				// Allocate the seats specifically
 				// with 1 person this is 1. Hence the && on line 152
 				int leftOver = numberOfPeople % (numberOfPeople/numTablesToAllocate); 
-				System.out.println("leftover is "+leftOver);
+				//System.out.println("leftover is "+leftOver);
 				for(Table t: allocation.get(currentChapter)) {
-					System.out.println("table "+t.tableID);
+					//System.out.println("table "+t.tableID);
 					// e.g., 21 people over 3 tables. 21 % 3 = 0
 					for(int i = 0; i < numberOfPeople/numTablesToAllocate; i++) {
-						System.out.println("adding "+list.get(currentChapter).get(0));
+						//System.out.println("adding "+list.get(currentChapter).get(0));
 						t.addPerson(list.get(currentChapter).remove(0));
 					}
 					// e.g., 29 people over 3 tables 29 % 3 = 2

@@ -102,6 +102,24 @@ public class OutputWriter implements IDatabase {
 			DatabaseReader dr = new DatabaseReader(connection);
 			// List of all tabls
 			ArrayList<Table> dbTables = dr.getTables();
+			//wipe all modifiable rows first
+			ArrayList<Integer> modifiables = dr.getModifiableTables();
+			try {
+				if(connection.isClosed()) {
+					connection = IDatabase.connectToDB();
+					stmt = connection.createStatement();
+				}
+			} catch (SQLException e1) {
+				e1.printStackTrace();
+			}
+			for(Integer i: modifiables) {
+				try {
+					System.out.println("deleting row"+i);
+					stmt.execute(makeDeleteRowStatement(i));
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
 			for(Table t: tables) {
 				if(!tableExistsInList(dbTables, t)) {
 					String insert = makeInsertStatement(t);
@@ -155,7 +173,23 @@ public class OutputWriter implements IDatabase {
 				} // end of for
 			} // end of if
 		} // end of else
+		try {
+			connection.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 	} // end of method
+	/*
+	 * writes a SQL query to delete the row of the given int
+	 */
+	private String makeDeleteRowStatement(Integer i) {
+		return "UPDATE tables SET person_1 = NULL, person_2 = NULL,"
+				+ "person_3 = NULL, person_4 = NULL, person_5 = NULL,"
+				+ "person_6 = NULL, person_7 = NULL, person_8 = NULL,"
+				+ "person_9 = NULL, person_10 = NULL WHERE table_number ="
+				+ " "+i+";";
+	}
+
 	/*
 	 * looks for table in list
 	 */
@@ -209,24 +243,45 @@ public class OutputWriter implements IDatabase {
 			ArrayList<Person> dbPeople = dr.getPeople();
 			ArrayList<Person> localPeople = getPeopleFromTables();
 			for(Person p: localPeople) {
+				try {
+					if(connection.isClosed()) {
+						connection = IDatabase.connectToDB();
+						stmt = connection.createStatement();
+					}
+				} catch (SQLException e1) {
+					e1.printStackTrace();
+				}
 				String query = "";
 				int personStatusinDB = personExistsInList(dbPeople, p);
 				if(personStatusinDB == -1) {
 					// insert new person
 					query = makeInsertPersonStatement(p);
 					System.out.println(query);
+					try {
+						stmt = connection.createStatement();
+						stmt.execute(query);
+					} catch (SQLException e) {
+						e.printStackTrace();
+					}
 				} else if(personStatusinDB == 0) {
 					query = makeUpdatePersonStatement(p);
-					System.out.println(query);
+					//System.out.println(query);
+					try {
+						stmt = connection.createStatement();
+						stmt.execute(query);
+					} catch (SQLException e) {
+						e.printStackTrace();
+					}
 				} 
-				try {
-					stmt = connection.createStatement();
-					stmt.execute(query);
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
+				
 			}
 
+		}
+		try {
+			connection.close();
+			stmt.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
 		}
 	}
 	private String makeUpdatePersonStatement(Person p) {

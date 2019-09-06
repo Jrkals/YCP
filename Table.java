@@ -76,10 +76,11 @@ public class Table {
 	}
 	
 	public int findInArray(String fullName) {
+		Person p = new Person(fullName);
 		for(int i = 0; i < seats.length; i++) {
 			if(seats[i] == null) continue;
-			if(seats[i].firstName.equalsIgnoreCase(fullName.split(" ")[0]) &&
-					seats[i].lastName.equalsIgnoreCase(fullName.split(" ")[1])) {
+			if(seats[i].firstName.equalsIgnoreCase(p.firstName) &&
+					seats[i].lastName.equalsIgnoreCase(p.lastName)) {
 				return i;
 			}
 		}

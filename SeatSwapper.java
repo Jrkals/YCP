@@ -11,6 +11,14 @@ public class SeatSwapper implements IDatabase {
 	public SeatSwapper() {
 		conn = connectToDB();
 	}
+	
+	public void close() {
+		try {
+			conn.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
 
 	boolean swap(String command) {
 		boolean success = false;
@@ -32,14 +40,15 @@ public class SeatSwapper implements IDatabase {
 		// swap
 		int p1Table = findTableForName(p1);
 		int p2Table = findTableForName(p2);
-		int p1LocAtTable = tables.get(p1Table-1).findInArray(p1)+1;
-		int p2LocAtTable = tables.get(p2Table-1).findInArray(p2)+1;
+		int p1LocAtTable = tables.get(p1Table-1).findInArray(p1);
+		int p2LocAtTable = tables.get(p2Table-1).findInArray(p2);
 		if(p1LocAtTable == -1 || p2LocAtTable == -1) {
 			System.out.println("Error, not found at that table");
 		}
 
 		Statement statement;
 		try {
+			if(conn.isClosed()) conn = IDatabase.connectToDB();
 			statement = conn.createStatement();
 			String query1 = makeUpdateStatement(p1, p2Table, p2LocAtTable);
 			System.out.println(query1);
@@ -75,14 +84,14 @@ public class SeatSwapper implements IDatabase {
 
 		return success;
 	}
-	
+
 	private String makeLockStatement(int p1Table) {
 		return "UPDATE tables SET modifyHuh = 0 WHERE table_number = "+p1Table+";";
 	}
 
 	//TODO not working. Find some way to keep cases constant
 	private String getRealName(String p1) {
-		DatabaseReader dr = new DatabaseReader(conn);
+		DatabaseReader dr = new DatabaseReader();
 		ArrayList<Person> people = dr.getPeopleFromTables();
 		for(Person p: people) {
 			if(p.firstName.equalsIgnoreCase(p1.split(" ")[0]) && 
@@ -90,6 +99,7 @@ public class SeatSwapper implements IDatabase {
 				return p.firstName + " "+p.lastName;
 			}
 		}
+		dr.close();
 		return p1; // at least give back the original string
 	}
 
@@ -100,8 +110,33 @@ public class SeatSwapper implements IDatabase {
 	private String[] parseLine(String command) {
 		String[] split = command.split(" ");
 		String[] rv = new String[2];
-		rv[0] = split[1] +" "+ split[2];
-		rv[1] = split[4]+" "+ split[5];
+		if(split.length == 6) {
+			rv[0] = split[1] +" "+ split[2];
+			rv[1] = split[4]+" "+ split[5];
+		}
+		else {
+			int indexOfAnd = 0;
+			for(int i = 0; i < split.length; i++) {
+				if(split[i].equals("and") || split[i].equals("with")) {
+					indexOfAnd = i;
+				}
+			}
+			rv[0] = split[1]; // first name of first person
+			for(int i = 2; i < split.length-1; i++) {
+				if(i < indexOfAnd) {
+					rv[0] += " "+split[i];
+				}
+				if(i == indexOfAnd) {
+					rv[1] = split[i+1]+ " ";
+					i+=2;
+				}
+				if(i > indexOfAnd) {
+					rv[1] += split[i] + " ";
+				}
+			}
+			rv[1] += split[split.length-1]; // last name of second person
+		}
+		System.out.println(rv[0]+ " "+ rv[1]);
 		return rv;
 	}
 
@@ -120,15 +155,35 @@ public class SeatSwapper implements IDatabase {
 		if(dr.personExists(p)) {
 			return true;
 		}
-
+		dr.close();
 		return false;
+	}
+	/*
+	 * finds where in a table in the db a person is 
+	 * e.g., spot 6 of some table
+	 * table most be modifiable
+	 */
+	private int findModifiableTableForName(String name) {
+		DatabaseReader dr = new DatabaseReader();
+		tables = dr.getTables();	
+		ArrayList<Integer> modifiables = dr.getModifiableTables();
+		for(Table t: tables) {
+			if(!modifiables.contains(t.tableID)) continue; // don't return static table
+			int loc = t.findInArray(name); // see if the person is in that table
+			if(loc != -1) {
+				return t.tableID;
+			}
+		}
+		System.out.println("can't find table for "+name);
+		dr.close();
+		return -1; // should never happen
 	}
 	/*
 	 * finds where in a table in the db a person is 
 	 * e.g., spot 6 of some table
 	 */
 	private int findTableForName(String name) {
-		DatabaseReader dr = new DatabaseReader(conn);
+		DatabaseReader dr = new DatabaseReader();
 		tables = dr.getTables();	
 		for(Table t: tables) {
 			int loc = t.findInArray(name); // see if the person is in that table
@@ -136,6 +191,8 @@ public class SeatSwapper implements IDatabase {
 				return t.tableID;
 			}
 		}
+		System.out.println("can't find table for "+name);
+		dr.close();
 		return -1; // should never happen
 	}
 	/*
@@ -144,35 +201,57 @@ public class SeatSwapper implements IDatabase {
 	private int findNameInTable(String fullName, int tableNum) {
 		for(Table t: tables) {
 			if(t.tableID == tableNum) {
+				System.out.println("found "+fullName+" at table "+tableNum);
 				return t.findInArray(fullName);
 			}
 		}
+		System.out.println("Couldn't find "+fullName +" in table"+ tableNum);
 		return -1;
 	}
-	
+
 	public void deletePeople(List<Person> ppl) {
-		System.out.println("In delete People");
+		try {
+			if(conn.isClosed()) {
+				conn = IDatabase.connectToDB();
+			}
+		} catch (SQLException e2) {
+			e2.printStackTrace();
+		}
+		//System.out.println("In delete People");
 		for(Person p: ppl) {
-			int tableNum = findTableForName(p.firstName+" "+p.lastName);
+			int tableNum = findModifiableTableForName(p.firstName+" "+p.lastName);
 			int loc = findNameInTable(p.firstName+" "+p.lastName, tableNum);
-			String deleteTablesStatement = "UPDATE tables SET person_"+(loc+1)+" = NULL WHERE person_"
-					+(loc+1)+" = \""+ p.firstName+ " "+p.lastName+"\";";
-			System.out.println(deleteTablesStatement);
 			String deletePeopleStatement = "DELETE FROM people WHERE name = \""+p.firstName+ " "+p.lastName+"\";";
 			System.out.println(deletePeopleStatement);
 			Statement stmt;
 			try {
 				stmt = this.conn.createStatement();
-				stmt.addBatch(deleteTablesStatement);
-				stmt.addBatch(deletePeopleStatement);
-				int[] result = stmt.executeBatch();
-				for(int i = 0; i < result.length; i++) {
-					System.out.println(result[i]);
-				}
-			} catch (SQLException e) {
-				e.printStackTrace();
+				stmt.execute(deletePeopleStatement);
+			} catch (SQLException e1) {
+				e1.printStackTrace();
 			}
-			
+			if(tableNum != -1 && loc != -1) {
+				String deleteTablesStatement = "UPDATE tables  SET person_"+(loc)+" = NULL"
+						+" where table_number = "+tableNum+";";
+				System.out.println(deleteTablesStatement);
+				
+				
+				try {
+					stmt = this.conn.createStatement();
+					stmt.addBatch(deleteTablesStatement);
+					stmt.addBatch(deletePeopleStatement);
+					int[] result = stmt.executeBatch();
+					for(int i = 0; i < result.length; i++) {
+						System.out.println(result[i]);
+					}
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+			else {
+				System.out.println("Tried to delete people who don't exist");
+			}
+
 		}
 	}
 

@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 import javax.xml.transform.stream.StreamResult;
 
 public class run {
-	final static boolean TESTINGMODE = true;
+	final static boolean TESTINGMODE = false;
 	final static boolean MAKENEWDATA = false;
 	static int numPeople = 20;
 	static Table[] VIPTables;
@@ -31,25 +31,65 @@ public class run {
 		}
 		else {
 			//String fileName = "/Users/justin/Dropbox/YCP/Seating_Project/small_data_set.csv";
-			fileName = "/Users/justin/Dropbox/YCP/Seating_Project/newest-export.csv";
+			fileName = "/Users/justin/Dropbox/YCP/Seating_Project/new.csv";
 		}
 		CsvReader csvr = new CsvReader(fileName);
 		ArrayList<Person> csvPeople = getPeoplFromCSV(csvr);
 		System.out.println("There are "+csvPeople.size()+" people in the csv");
+		//Utilities.printArrayList(csvPeople);
 		
 		DatabaseReader dbr = new DatabaseReader();
 		ArrayList<Person> dbPeoplePeople = dbr.getPeople();
 		ArrayList<Person> dbTablePeople = dbr.getPeopleFromTables();
+		ArrayList<Person> dbNonModifiableTablePeople = dbr.getNonModifiablePeople();
 		System.out.println("There are "+dbPeoplePeople.size()+" people in the people table");
 		System.out.println("There are "+dbTablePeople.size()+" people in the tables table");
-		List<Person> inTablesNotPeople = dbTablePeople.stream().filter(p -> !listContainsName(dbPeoplePeople, p)).collect(Collectors.toList());;
+		System.out.println("There are "+dbNonModifiableTablePeople.size()+" non modifiables");
+		//Utilities.printArrayList(dbPeoplePeople);
+		//Utilities.printArrayList(dbTablePeople);
+		Utilities.printArrayList(dbNonModifiableTablePeople);
 
+		//List<Person> inTablesNotPeople = dbTablePeople.stream().filter(p -> !listContainsName(dbPeoplePeople, p)).collect(Collectors.toList());;
+		//TODO extract these three into 1 method and call it 3 times
+		ArrayList<Person> inTablesNotPeople = new ArrayList<Person>();
+		for(Person p: dbTablePeople) {
+			if(!listContainsName(dbPeoplePeople, p)) {
+				inTablesNotPeople.add(p);
+			}
+		}
+		System.out.println("num of people to be deleted from tables is "+inTablesNotPeople.size());
+		
+		ArrayList<Person> inTablesNotCSV = new ArrayList<Person>();
+		for(Person p: dbTablePeople) {
+			if(!listContainsName(csvPeople, p) && !listContainsName(dbNonModifiableTablePeople, p)) {
+				inTablesNotCSV.add(p);
+			}
+		}
+		System.out.println("num of people to be deleted from tables is "+inTablesNotCSV.size());
+		
+		ArrayList<Person> inPeopleNotCSV = new ArrayList<Person>();
+		for(Person p: dbPeoplePeople) {
+			if(!listContainsName(csvPeople, p) && !listContainsName(dbNonModifiableTablePeople, p)) {
+				inPeopleNotCSV.add(p);
+			}
+		}
+		System.out.println("num of people to be deleted from people is "+inPeopleNotCSV.size());
 		
 		//remove people in db and not csv
 		//TODO Test this
 		SeatSwapper dbm = new SeatSwapper();
 		dbm.deletePeople(inTablesNotPeople);
-
+		dbm.deletePeople(inTablesNotCSV);
+		dbm.deletePeople(inPeopleNotCSV);
+		
+		// add non modifiables into csvPeople
+		for(Person p: dbNonModifiableTablePeople) {
+			if(!listContainsName(csvPeople, p)) {
+				System.out.println("adding "+p+" to csvPeople");
+				csvPeople.add(p);
+			}
+		}
+		
 		//Read Tables
 		readTablesFromCSV();
 
@@ -101,7 +141,7 @@ public class run {
 			System.out.println("Example 2: 'exchange Sam Adams with Calvin Coolidge'");
 			String input = scan.nextLine();
 			while(!input.equalsIgnoreCase("done")) {
-				if(input.split(" ").length != 6) {
+				if(input.split(" ").length < 6) {
 					System.out.println("Error re-type command properly");
 					System.out.println("Use the formula swap fn1 ln1 and fn2 ln2");
 					System.out.println("For example: 'swap john adams and bill murray'");
@@ -116,8 +156,9 @@ public class run {
 				}
 				input = scan.nextLine();
 			}
+			ssw.close();
 		}
-
+		
 		scan.close();
 	}
 

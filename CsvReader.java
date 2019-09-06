@@ -88,9 +88,23 @@ public class CsvReader {
 			String[] name = parts[1].split(" "); 
 			// check to make sure they have a name
 			if(name.length > 1) {
-				firstName=name[0]; 
-				lastName=name[1];
+				if(name.length == 2) {
+					firstName=name[0]; 
+					lastName=name[1];
+				} // handle middle names
+				else if(name.length == 3) {
+					firstName = name[0]+ " ";
+					firstName += name[1];
+					lastName = name[2];
+				}
+				else if(name.length == 4) {
+					firstName = name[0] + " ";
+					firstName += name[1] + " ";
+					firstName += name[2];
+					lastName = name[3];
+				}
 			} else {System.out.println("ERROR NO NAME ENTERED: "+line);}
+			System.out.println(firstName+" "+lastName);
 			int[] tagListIndices = new int[2];
 			tagListIndices = findTagListIndices(parts);
 			// put tags in a list
@@ -102,7 +116,7 @@ public class CsvReader {
 			for(int i = tagListIndices[1]+1; i <parts.length; i++) {
 				rest.add(parts[i]);
 			}
-
+			//System.out.println(firstName+" "+lastName+" "+tags.size()+" "+rest.size());
 			Person p = new Person(firstName, lastName, tags, rest);
 			people.add(p);
 		}
@@ -117,12 +131,16 @@ public class CsvReader {
 		int[] rv = new int[2];
 		// start at 2 to skip the NB id and name
 		for(int i = 2; i < parts.length; i++) {
-			if(parts[i].charAt(0) == '"') {
-				rv[0] = i; // beginning of tag list
-			}
-			if(parts[i].charAt(parts[i].length()-1) == '"') {
-				rv[1] = i; // end of tag list
-				break;
+			if(parts[i] != null) {
+				//System.out.println(parts[i]);
+				if(parts[i].equals("")) { rv[1] = i; break;}
+				if(parts[i].charAt(0) == '"') {
+					rv[0] = i; // beginning of tag list
+				}
+				if(parts[i].charAt(parts[i].length()-1) == '"') {
+					rv[1] = i; // end of tag list
+					break;
+				}
 			}
 		}
 
@@ -163,7 +181,7 @@ public class CsvReader {
 	public ArrayList<Person> getPeople(){
 		return people;
 	}
-	
+
 	public ArrayList<Person> getPeopleGoingToGala(){
 		ArrayList<Person> rv = new ArrayList<>();
 		for(Person p: people) {

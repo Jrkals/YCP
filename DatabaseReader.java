@@ -16,13 +16,22 @@ public class DatabaseReader implements IDatabase {
 	public DatabaseReader() {
 		conn = IDatabase.connectToDB();
 	}
+
+	public void close(){
+		try {
+			conn.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
 	ArrayList<Integer> getModifiableTables() {
 		//Connection conn = connectToDB();
 		ArrayList<Integer> modifiableTables = new ArrayList<>();
-		if(conn == null) {
-			System.out.println("Cannot connect to DB");
-		}
-		else {
+		try {
+			if(conn == null || conn.isClosed()) {
+				System.out.println("Cannot connect to DB trying again");
+				conn = IDatabase.connectToDB();
+			}
 			try {
 				Statement stmt = conn.createStatement();
 				String query = "Select table_number, modifyHuh from tables;";
@@ -36,7 +45,11 @@ public class DatabaseReader implements IDatabase {
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}			
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		} // end of else
+		close();
 		return modifiableTables;
 	} // end of method
 	Connection connectToDB() {
@@ -44,10 +57,11 @@ public class DatabaseReader implements IDatabase {
 	}
 
 	ArrayList<Table> getTables(){
-		if(conn == null) {
-			System.out.println("Cannot connect to DB");
-		}
-		else {
+		try {
+			if(conn == null || conn.isClosed()) {
+				System.out.println("Cannot connect to DB trying again");
+				conn = connectToDB();
+			}
 			try {
 				Statement stmt = conn.createStatement();
 				String query = "Select * from tables;";
@@ -60,8 +74,11 @@ public class DatabaseReader implements IDatabase {
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}			
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		} // end of else
-
+		close();
 		return tables;
 	}
 
@@ -80,8 +97,8 @@ public class DatabaseReader implements IDatabase {
 				}else {
 					// TODO fix this these people are null basically i.e. just a name
 					// Solution: this is handled in Arranger
-					Person p = new Person(name.split(" ")[0], name.split(" ")[1]);
-					t.addPerson(p, i-1);
+					Person p = new Person(name);
+					t.addPerson(p, i-2);
 				}
 			}
 			// check vip status
@@ -111,7 +128,7 @@ public class DatabaseReader implements IDatabase {
 		getTables();
 		ArrayList<Person> ppl = new ArrayList<Person>();
 		for(Table t: tables) {
-			for(int i = 0; i <= 10-t.numberOfSpots; i++) {
+			for(int i = 0; i < 10; i++) {
 				if(t.seats[i] != null)
 					ppl.add(t.seats[i]);
 			}
@@ -123,10 +140,11 @@ public class DatabaseReader implements IDatabase {
 	 */
 	ArrayList<Person> getPeople(){
 		ArrayList<Person> ppl = new ArrayList<>();
-		if(conn == null) {
-			System.out.println("Cannot connect to DB");
-		}
-		else {
+		try {
+			if(conn == null || conn.isClosed()) {
+				System.out.println("Cannot connect to DB trying again");
+				conn = IDatabase.connectToDB();
+			}
 			try {
 				Statement stmt = conn.createStatement();
 				String query = "Select * from people;";
@@ -139,8 +157,11 @@ public class DatabaseReader implements IDatabase {
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}			
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		} // end of else
-
+		close();
 		return ppl;
 	}
 
@@ -166,9 +187,10 @@ public class DatabaseReader implements IDatabase {
 	 */
 	boolean personExists(String person) {
 		ArrayList<Person> ppl = getPeople();
-		System.out.println("Checking this against the list of "+ppl.size()+" people...");
+		//System.out.println("Checking this against the list of "+ppl.size()+" people...");
 		for(Person p: ppl) {
-			if(!(p.firstName+p.lastName).equals(person)){
+			System.out.println(p.firstName+ " "+p.lastName+" with "+person);
+			if((p.firstName+" "+p.lastName).equals(person)){
 				return true;
 			}
 		}
@@ -182,6 +204,27 @@ public class DatabaseReader implements IDatabase {
 	void getReadyToFindPeople() {
 		getTables();
 		getPeopleFromTables();
+	}
+	/*
+	 * returns all the people at non modifiable tables
+	 */
+	public ArrayList<Person> getNonModifiablePeople() {
+		ArrayList<Person> ppl = getPeople();
+		ArrayList<Person> tppl = getPeopleFromTables();
+		ArrayList<Person> rv = new ArrayList<>();
+		ArrayList<Integer> mods = getModifiableTables();
+		for(Person p: ppl) {
+			if(!mods.contains(p.table.tableID)) {
+				rv.add(p);
+			}
+		}
+		for(Person p: tppl) {
+			if(!mods.contains(p.table.tableID)) {
+				rv.add(p);
+			}
+		}
+		return rv;
+
 	}
 
 }
